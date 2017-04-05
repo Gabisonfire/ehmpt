@@ -1,6 +1,6 @@
-# EHMProgressTracker
-
 # **[Download here](https://github.com/Gabisonfire/ehmpt/releases/latest)**
+
+# EHMProgressTracker
 
 EHMpt is a utility to track your players progress and display useful information in forms of graph.
 ![main](screenshots/ehmpt1.png)
