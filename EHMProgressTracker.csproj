@@ -130,14 +130,24 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="addPlayer.xaml.cs">
-      <DependentUpon>addPlayer.xaml</DependentUpon>
+    <Compile Include="AddPlayer.xaml.cs">
+      <DependentUpon>AddPlayer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EditPlayer.xaml.cs">
+      <DependentUpon>EditPlayer.xaml</DependentUpon>
     </Compile>
     <Compile Include="utils.cs" />
     <Compile Include="PlayerTypeSelect.xaml.cs">
       <DependentUpon>PlayerTypeSelect.xaml</DependentUpon>
     </Compile>
-    <Page Include="addPlayer.xaml">
+    <Compile Include="Importer.xaml.cs">
+      <DependentUpon>Importer.xaml</DependentUpon>
+    </Compile>
+    <Page Include="AddPlayer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditPlayer.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -155,6 +165,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="PlayerTypeSelect.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Importer.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -196,7 +210,6 @@
   <ItemGroup>
     <Resource Include="icon.ico" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <Resource Include="Icons\goalie.png" />
     <Resource Include="Icons\player.png" />

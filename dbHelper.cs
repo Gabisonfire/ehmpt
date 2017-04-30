@@ -134,6 +134,7 @@ namespace EHMProgressTracker
                 sqlc.Open();
                 using (SQLiteCommand cmd = sqlc.CreateCommand())
                 {
+                    
                     cmd.CommandText = query;
                     cmd.ExecuteNonQuery();
                 }
@@ -296,7 +297,7 @@ namespace EHMProgressTracker
             query = "INSERT INTO Players (" +
                 "playerID, playerType, First_Name, Last_Name, BirthDate,";
             values = ") VALUES ('" +
-                player.playerID + "','" + player.playerType.ToString() + "','" + player.firstName + "','" + player.lastName + "','" + player.birthDate + "','";
+                player.playerID + "','" + player.playerType.ToString() + "',\"" + player.firstName + "\",\"" + player.lastName + "\",'" + player.birthDate + "','";
             foreach (KeyValuePair<string,string> attr in player.Snapshots[0].attributes)
             {
                 query += attr.Key + ", ";
@@ -322,6 +323,13 @@ namespace EHMProgressTracker
         public static void SnapshotRemove(Snapshot snapshot, Player player)
         {
             string query = "DELETE FROM Players WHERE Ingame_Date = '" + snapshot.attributes["Ingame_Date"] + "' AND playerID = '"+ player.playerID + "';";
+            SimpleWriteQuery(query);
+        }
+
+        public static void EditName(Player player, string first, string last)
+        {
+            string query = "";
+            query = "UPDATE Players SET First_Name = \"" + first + "\", Last_Name = \"" + last + "\" WHERE playerID = " + player.playerID + ";";
             SimpleWriteQuery(query);
         }
 

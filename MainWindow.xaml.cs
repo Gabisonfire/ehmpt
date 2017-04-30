@@ -9,6 +9,7 @@ using System.Windows.Media.Imaging;
 using System.Globalization;
 using System.Windows.Media;
 using Microsoft.VisualBasic;
+using System.Windows.Input;
 
 namespace EHMProgressTracker
 {
@@ -17,23 +18,24 @@ namespace EHMProgressTracker
      * TODO
      * Track Height / Weight
      * Treeview Sorting
-     * Improve reloading charts    
-     * Change add player layout to a grid
      * All attributes chart
      * Attribute growth (all) Bars
+     * Prefill new snapshots
+     * Edit players name
+     * Edit snapshot
      * */
 
 
     public partial class MainWindow : Window
     {
         public static List<Player> globalPlayersList = new List<Player>();
-        public static readonly string VER = "0.1 Beta";
+        public static readonly string VER = "0.2 Beta";
 
         // Chart
         public List<string> ChartDates = new List<string>();
         public string[] ChartAttrValues = Enumerable.Range(1, 20).Select(x => x.ToString()).ToArray();
         public static readonly string[] OtherStats = { "Total Attributes", "Age/Attribute Ratio" };
-        public static readonly string[] AllStats = { "Total Attributes" };
+        public static readonly string[] AllStats = { "Total Attributes", "Age/Attribute Ratio", "Growth per month" };
 
 
         public MainWindow()
@@ -92,9 +94,9 @@ namespace EHMProgressTracker
             cbAllTotal.ItemsSource = AllStats;
             cbAllTotal.SelectedIndex = 0;
 
-            cbYear.ItemsSource = addPlayer.Years;
-            cbDay.ItemsSource = addPlayer.Days;
-            cbMonth.ItemsSource = DateTimeFormatInfo.CurrentInfo.MonthNames.Reverse().Skip(1).Reverse();
+            cbYear.ItemsSource = AddPlayer.Years;
+            cbDay.ItemsSource = AddPlayer.Days;
+            cbMonth.ItemsSource = DateTimeFormatInfo.InvariantInfo.MonthNames.Reverse().Skip(1).Reverse();
         }
 
         /// <summary>
@@ -191,13 +193,12 @@ namespace EHMProgressTracker
             }
             if ((bool)typeSelect.ShowDialog())
             {
-                addPlayer = new addPlayer(PlayerType.player, ingameDate: dateIndex);
+                addPlayer = new AddPlayer(PlayerType.player, ingameDate: dateIndex);
             }
             else
             {
-                addPlayer = new addPlayer(PlayerType.goalie, ingameDate: dateIndex);
+                addPlayer = new AddPlayer(PlayerType.goalie, ingameDate: dateIndex);
             }
-            addPlayer.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             if ((bool)(addPlayer.ShowDialog())) {
                 GenerateTreeList(null, true);
                 ChartAllTotalAttributes();
@@ -229,8 +230,8 @@ namespace EHMProgressTracker
             {
                 return;
             }
-            Window addPlayer = new addPlayer(p.playerType, true, p, dateIndex);
-            addPlayer.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            Window addPlayer = new AddPlayer(p.playerType, true, p, dateIndex);
+
             if ((bool)(addPlayer.ShowDialog())) {
                 GenerateTreeList(null, true);
                 ChartAllTotalAttributes();
@@ -649,7 +650,57 @@ namespace EHMProgressTracker
                 }
             };
 
-            CreateAxis(players, "Players", range, "Total", chartAll, sc, 1, 20);
+            CreateAxis(players, "Players", range, "Total", chartAll, sc, 1, 0, 20);
+        }
+
+        public void ChartAllGrowthPerMonth()
+        {
+            string[] range = Enumerable.Range(0, 200).Select(x => x.ToString()).ToArray();
+            string[] players = globalPlayersList.Select(x => x.lastName).ToArray();
+            List<int> totalAttr = new List<int>();
+
+            foreach (Player p in globalPlayersList)
+            {
+                double x = double.Parse(AttributePerDay(p));
+                x = x * 30;
+                int y = Convert.ToInt32(x);
+                totalAttr.Add(y);   
+                         
+            }
+
+            SeriesCollection sc = new SeriesCollection
+            {
+                new ColumnSeries
+                {
+                    Title = "Growth",
+                    Values = new ChartValues<int>(totalAttr),
+                }
+            };
+            CreateAxis(players, "Players", range, "Growth", chartAll, sc, 1, 0, 20);
+        }
+
+        public void ChartAllAgeRatio()
+        {
+            string[] range = Enumerable.Range(0, 25).Select(x => x.ToString()).ToArray();
+            string[] players = globalPlayersList.Select(x => x.lastName).ToArray();
+            List<double> totalAttr = new List<double>();
+
+            foreach (Player p in globalPlayersList)
+            {
+                double x = p.Snapshots.First().AttributesTotal() / int.Parse(p.Snapshots.First().GetAge(p));
+                totalAttr.Add(Math.Round(x, 2));
+            }
+
+            SeriesCollection sc = new SeriesCollection
+            {
+                new ColumnSeries
+                {
+                    Title = "Total",
+                    Values = new ChartValues<double>(totalAttr),
+                }
+            };
+
+            CreateAxis(players, "Players", range, "Total", chartAll, sc, 1, 1, 20);
         }
 
         /// <summary>
@@ -663,7 +714,7 @@ namespace EHMProgressTracker
         /// <param name="Collection">Values collection</param>
         /// <param name="xStep">How many steps on the x axis</param>
         /// <param name="rotation">Labels roatation on the X axis</param>
-        private void CreateAxis(IList<string> x, string xtitle, IList<string> y, string ytitle, CartesianChart chart, SeriesCollection Collection, int xStep = 0, int rotation = 0)
+        private void CreateAxis(IList<string> x, string xtitle, IList<string> y, string ytitle, CartesianChart chart, SeriesCollection Collection, double xStep = 0.0, double yStep = 0.0, int rotation = 0)
         {
             Axis axisx = new Axis();
             axisx.Labels = x;
@@ -671,13 +722,17 @@ namespace EHMProgressTracker
             if (xStep > 0)
             {
                 axisx.Separator.Step = xStep;
-            }
-
+            }       
             axisx.LabelsRotation = rotation;
             
             Axis axisy = new Axis();
             axisy.Labels = y;
             axisy.Title = ytitle;
+
+            if (yStep > 0)
+            {
+                axisy.Separator.Step = yStep;
+            }
 
             AxesCollection ax = new AxesCollection();
             AxesCollection ay = new AxesCollection();
@@ -706,7 +761,9 @@ namespace EHMProgressTracker
                 DateTime lastDate = DateTime.ParseExact(last.attributes["Ingame_Date"], "dd-MM-yyyy", CultureInfo.InvariantCulture);
                 TimeSpan span = lastDate.Subtract(firstDate);
                 int total = last.AttributesTotal() - first.AttributesTotal();
-                return Math.Round((double)total / (double)span.Days, 2).ToString();
+                double res = Math.Round((double) total / (double) span.Days, 2);
+                if (double.IsNaN(res)) return "0.00";
+                return res.ToString();
             }
             catch (Exception ex)
             {
@@ -726,7 +783,20 @@ namespace EHMProgressTracker
         // All players chart change handler
         private void cbAllTotal_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Nothing yet
+            if (cbAllTotal.SelectedIndex == -1 || string.IsNullOrEmpty(cbAllTotal.SelectedItem.ToString())) { return; }
+            switch (cbAllTotal.SelectedItem.ToString())
+            {
+                case ("Total Attributes"):
+                    ChartAllTotalAttributes();
+                    break;
+                case ("Age/Attribute Ratio"):
+                    ChartAllAgeRatio();
+                    break;
+                case ("Growth per month"):
+                    ChartAllGrowthPerMonth();
+                    break;
+                default: break;
+            }
         }
 
         // Change database
@@ -749,6 +819,7 @@ namespace EHMProgressTracker
                     dbHelper.DEFAULT_DB = dbName + ".sqlite";
                     globalPlayersList = dbHelper.MergeSnapshots(dbHelper.ReadAllPlayers());
                     GenerateTreeList(globalPlayersList, true);
+
                 }
                 else
                 {
@@ -757,6 +828,7 @@ namespace EHMProgressTracker
                     dbHelper.DBPreCheck();
                     globalPlayersList = dbHelper.MergeSnapshots(dbHelper.ReadAllPlayers());
                     GenerateTreeList(globalPlayersList, true);
+                    ChartAllTotalAttributes();
                 }
 
             }
@@ -766,6 +838,46 @@ namespace EHMProgressTracker
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("EHMProgressTracker " + VER + Environment.NewLine + "By Gabisonfire", "About", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void Grid_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+                DragMove();
+        }
+
+        private void btImport_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(cbDay.Text) || string.IsNullOrEmpty(cbMonth.Text) ||
+                string.IsNullOrEmpty(cbYear.Text))
+            {
+                utils.ShowError("You must first choose an ingame date.");
+                return;
+            }
+            Window importer = new Importer(globalPlayersList, new string[] {cbDay.Text, cbMonth.Text, cbYear.Text });
+            if ((bool) importer.ShowDialog())
+            {
+                GenerateTreeList(null, true);
+                ChartAllTotalAttributes();
+            }
+        }
+
+        private void btEdit_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if ((tvMain.SelectedItem as TreeViewItem).Tag.GetType() != typeof(Player)) { return; }
+            }
+            catch (Exception)
+            {
+                return;
+            }
+            EditPlayer fmEditPlayer = new EditPlayer((tvMain.SelectedItem as TreeViewItem).Tag as Player);
+            if ((bool) fmEditPlayer.ShowDialog())
+            {
+                GenerateTreeList(null, true);
+                ChartAllTotalAttributes();
+            }
         }
     }
 }

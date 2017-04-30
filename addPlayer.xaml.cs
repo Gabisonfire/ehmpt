@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 
@@ -13,7 +14,7 @@ namespace EHMProgressTracker
    
    
 
-    public partial class addPlayer : Window
+    public partial class AddPlayer : Window
     {
         private static List<TextBox> tbsAttrCollection = new List<TextBox>();       // Keep track of the textboxes for attributes
         private static List<TextBox> tbsCommonCollection = new List<TextBox>();     // Keep track of the textboxes for common information
@@ -23,9 +24,10 @@ namespace EHMProgressTracker
 
 
         // Form constructor
-        public addPlayer(PlayerType pt, bool isSnapshot = false, Player SelectedPlayer = null, int[] ingameDate = null)
+        public AddPlayer(PlayerType pt, bool isSnapshot = false, Player SelectedPlayer = null, int[] ingameDate = null)
         {
             InitializeComponent();
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
             GenerateLabels(this, pt, isSnapshot, SelectedPlayer, ingameDate);
         }
 
@@ -46,7 +48,7 @@ namespace EHMProgressTracker
             cbBdYear.Width = 60;
             cbBdDay.ItemsSource = Days;
             cbBdYear.ItemsSource = Years;
-            cbBdMonth.ItemsSource = DateTimeFormatInfo.CurrentInfo.MonthNames.Reverse().Skip(1).Reverse();
+            cbBdMonth.ItemsSource = DateTimeFormatInfo.InvariantInfo.MonthNames.Reverse().Skip(1).Reverse();
             StackPanel stack = new StackPanel();
             stack.Orientation = Orientation.Horizontal;
             DockPanel.SetDock(stack, Dock.Right);
@@ -64,11 +66,13 @@ namespace EHMProgressTracker
         /// </summary>
         /// <param name="fmAddPlayer">The form containing the fields</param>
         /// <param name="SelectedPlayer">The selected player</param>
-        public static void PreFillForSnapshot(addPlayer fmAddPlayer, Player SelectedPlayer)
+        public static void PreFillForSnapshot(AddPlayer fmAddPlayer, Player SelectedPlayer)
         {
-            fmAddPlayer.spName.IsEnabled = false;
+            List<Control> Controls = new List<Control>();
             tbsCommonCollection.GetTextBoxByName("tbFirst_Name").Text = SelectedPlayer.firstName;
             tbsCommonCollection.GetTextBoxByName("tbLast_Name").Text = SelectedPlayer.lastName;
+            Controls.Add(tbsCommonCollection.GetTextBoxByName("tbFirst_Name"));
+            Controls.Add(tbsCommonCollection.GetTextBoxByName("tbLast_Name"));
             string[] bdate = SelectedPlayer.birthDateSplit();
             string day = bdate[0];
             if (day.StartsWith("0"))
@@ -76,9 +80,11 @@ namespace EHMProgressTracker
                 day = day.Replace("0", "");
             }
             cbsCollection.GetComboBoxByName("cbBdDay").Text = day;
+            Controls.Add(cbsCollection.GetComboBoxByName("cbBdDay"));
             try
             {
-                cbsCollection.GetComboBoxByName("cbBdMonth").Text = CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(int.Parse(bdate[1]));                
+                cbsCollection.GetComboBoxByName("cbBdMonth").Text = CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(int.Parse(bdate[1]));
+                Controls.Add(cbsCollection.GetComboBoxByName("cbBdMonth"));        
             }
             catch(Exception ex)
             {
@@ -86,6 +92,16 @@ namespace EHMProgressTracker
                 utils.Log("Birthdate parse error when creating form for a snapshot. " + Environment.NewLine + ex.ToString());
             }
             cbsCollection.GetComboBoxByName("cbBdYear").Text = bdate[2];
+            Controls.Add(cbsCollection.GetComboBoxByName("cbBdYear"));
+            ToggleControls(Controls, false);
+        }
+
+        private static void ToggleControls(List<Control> Controls, bool enabled = true)
+        {
+            foreach(Control ui in Controls)
+            {
+                ui.IsEnabled = enabled;                
+            }
         }
 
         /// <summary>
@@ -170,7 +186,7 @@ namespace EHMProgressTracker
         /// <param name="isSnapshot">is this a snapshot?</param>
         /// <param name="SelectedPlayer">The selected player (in case of a snapshot)</param>
         /// <param name="dateIndex">The ingame date pushed into an array</param>
-        private static void GenerateLabels(addPlayer fmAddPlayer, PlayerType playerType, bool isSnapshot = false, Player SelectedPlayer = null, int[] dateIndex = null)
+        private static void GenerateLabels(AddPlayer fmAddPlayer, PlayerType playerType, bool isSnapshot = false, Player SelectedPlayer = null, int[] dateIndex = null)
         {
             // Clear collections.
             tbsAttrCollection.Clear();
@@ -195,8 +211,21 @@ namespace EHMProgressTracker
             // Create common attributes controls
             foreach (string attr in dbHelper.commonAttributes)
             {                
-                fmAddPlayer.spName.Children.Add(CreateCommonAttributeDockPanel(attr));
+                fmAddPlayer.spName.Children.Add(CreateCommonAttributeDockPanel(attr));                
             }
+
+
+            // Add Checkbox
+            CheckBox cbUseLast = new CheckBox();
+            //cbUseLast.Margin = new Thickness(0, 5, 0, 0);
+            cbUseLast.Content = "Pre-fill using last snapshot";
+            cbUseLast.Click += (sender, args) => LoadSnapshot(SelectedPlayer, cbUseLast);
+            fmAddPlayer.spName.Children.Add(cbUseLast);
+
+            // Add the in-game date field/combos
+            fmAddPlayer.spName.Children.Add(AddIngameDateField(dateIndex));
+
+
 
             // If snapshot, fill the needed info and lock controls
             if (isSnapshot)
@@ -205,23 +234,49 @@ namespace EHMProgressTracker
             }
 
             // Add labels and textbox for every attributes
-            foreach (string attr in attributes)
+            for (int i = 0; i < attributes.Count(); i++)
             {
-                fmAddPlayer.spAttributes.Children.Add(CreateAttributeDockPanel(attr));
+                int indexTechnical = 0;
+                if (playerType == PlayerType.player)
+                {
+                    indexTechnical = 12;
+                }
+                if (playerType == PlayerType.goalie)
+                {
+                    indexTechnical = 9;
+                }
+
+                DockPanel dp = CreateAttributeDockPanel(attributes[i]);
+                if (i == 0 || i < indexTechnical)
+                {
+                    Grid.SetColumn(dp, 0);
+                    Grid.SetRow(dp, i);
+                }
+                else if (i == indexTechnical || i < indexTechnical + 9)
+                {
+                    Grid.SetColumn(dp, 1);
+                    Grid.SetRow(dp, i - indexTechnical);
+                }
+                else if (i >= indexTechnical + 9)
+                {
+                    Grid.SetColumn(dp, 2);
+                    Grid.SetRow(dp, i - indexTechnical - 9);
+                }                    
+                fmAddPlayer.gridAttributes.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+                fmAddPlayer.gridAttributes.Children.Add(dp);                
             }
-
-            // Add the in-game date field/combos
-            fmAddPlayer.spAttributes.Children.Add(AddIngameDateField(dateIndex));
-
+            
             // Finally add a save button
             Button bt = new Button();
             bt.Content = "Save";
             bt.Click += (sender, EventArgs) => { Bt_Click(sender, EventArgs, playerType, isSnapshot, SelectedPlayer, fmAddPlayer); };
-            bt.Width = 100;
-            bt.Margin = new Thickness(0, 70, 0, 0);
+            bt.Width = 200;
+            bt.Margin = new Thickness(0, 20, 0, 0);
             bt.VerticalAlignment = VerticalAlignment.Center;
-            bt.HorizontalAlignment = HorizontalAlignment.Center;
-            fmAddPlayer.spAttributes.Children.Add(bt);
+            bt.HorizontalAlignment = HorizontalAlignment.Center;            
+            Grid.SetRow(bt, fmAddPlayer.gridAttributes.RowDefinitions.Count - 1);
+            Grid.SetColumn(bt, 1);
+            fmAddPlayer.gridAttributes.Children.Add(bt);
         }
 
         /// <summary>
@@ -249,7 +304,7 @@ namespace EHMProgressTracker
             cbYear.Width = 50;
             cbDay.ItemsSource = Days;
             cbYear.ItemsSource = Years;
-            cbMonth.ItemsSource = DateTimeFormatInfo.CurrentInfo.MonthNames.Reverse().Skip(1).Reverse();
+            cbMonth.ItemsSource = DateTimeFormatInfo.InvariantInfo.MonthNames.Reverse().Skip(1).Reverse();
             if (dateIndex != null)
             {
                 cbDay.SelectedIndex = dateIndex[0];
@@ -267,6 +322,34 @@ namespace EHMProgressTracker
             topSp.VerticalAlignment = VerticalAlignment.Center;
             return topSp;
         }
+
+        // Uses last snapshot to pre-populate fields
+        private static void LoadSnapshot(Player p, ToggleButton cb)
+        {
+            if (cb.IsChecked == true)
+            {
+                if (p.Snapshots.Count < 1)
+                {
+                    utils.ShowError("This player has no snapshots to start from.");
+                    cb.IsChecked = false;
+                    return;
+                }
+
+                foreach (var tb in tbsAttrCollection)
+                {
+                    tb.Text = p.Snapshots[0].GetAttribute(tb.Name.Substring(2).Replace(' ','_'));
+                }
+            }
+            else
+            {
+                foreach (var tb in tbsAttrCollection)
+                {
+                    tb.Text = "";
+                }
+            }            
+
+        }
+
 
         // Numbers only event for textboxes (attributes)
         private static void Tb_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -297,7 +380,7 @@ namespace EHMProgressTracker
             {
                 if (cb.SelectedIndex == -1)
                 {
-                    utils.ShowError("Please select fill all the dates.");
+                    utils.ShowError("Please fill all dates.");
                     return false;
                 }
             }
@@ -306,50 +389,62 @@ namespace EHMProgressTracker
         }
 
         // Save button method (add player or snapshot)
-        private static void Bt_Click(object sender, RoutedEventArgs e, PlayerType pt, bool isSnapshot, Player SelectedPlayer, addPlayer fm)
+        private static void Bt_Click(object sender, RoutedEventArgs e, PlayerType pt, bool isSnapshot, Player SelectedPlayer, AddPlayer fm)
         {
-            if (!DataCheck()) { return; }
-            Player p = null;
-            if (isSnapshot)
+            try
             {
-                if(SelectedPlayer != null)
+                if (!DataCheck()) { return; }
+                Player p = null;
+                if (isSnapshot)
                 {
-                    p = new Player(SelectedPlayer.playerID, SelectedPlayer.firstName, SelectedPlayer.lastName, SelectedPlayer.playerType, SelectedPlayer.birthDate);
+                    if (SelectedPlayer != null)
+                    {
+                        p = new Player(SelectedPlayer.playerID, SelectedPlayer.firstName, SelectedPlayer.lastName, SelectedPlayer.playerType, SelectedPlayer.birthDate);
+                    }
+                    else
+                    {
+                        throw new ArgumentNullException("A player object was expected but received NULL.");
+                    }
                 }
                 else
                 {
-                    throw new ArgumentNullException("A player object was expected but received NULL.");
-                }
-            }
-            else
-            {
-                string bDate = Player.ComboToDateStr(new string[] {
+                    string bDate = Player.ComboToDateStr(new string[] {
                 cbsCollection.GetComboBoxByName("cbBdDay").Text,
                 cbsCollection.GetComboBoxByName("cbBdMonth").Text,
                 cbsCollection.GetComboBoxByName("cbBdYear").Text
                 });
 
-                p = new Player(dbHelper.GetNewPlayerId(), tbsCommonCollection.GetTextBoxByName("tbFirst_Name").Text,
-                tbsCommonCollection.GetTextBoxByName("tbLast_Name").Text,
-                pt,
-                bDate);
-            }
-            Snapshot s = new Snapshot(p.playerType);
-            foreach (TextBox t in tbsAttrCollection)
-            {
-                s.attributes[t.Name.Substring(2, t.Name.Length - 2)] = t.Text;
-            }
+                    p = new Player(dbHelper.GetNewPlayerId(), tbsCommonCollection.GetTextBoxByName("tbFirst_Name").Text,
+                    tbsCommonCollection.GetTextBoxByName("tbLast_Name").Text,
+                    pt,
+                    bDate);
+                }
+
+                Snapshot s = new Snapshot(p.playerType);
+                foreach (TextBox t in tbsAttrCollection)
+                {
+                    s.attributes[t.Name.Substring(2, t.Name.Length - 2)] = t.Text;
+                }
 
                 s.attributes["Ingame_Date"] = Player.ComboToDateStr(new string[] {
                 cbsCollection.GetComboBoxByName("cbDay").Text,
                 cbsCollection.GetComboBoxByName("cbMonth").Text,
                 cbsCollection.GetComboBoxByName("cbYear").Text
-            });        
-            p.Snapshots.Add(s);
-            dbHelper.PlayerAdd(p);            
-            fm.DialogResult = true;
-            fm.Close();
-        }
+            });
+                p.Snapshots.Add(s);
+                dbHelper.PlayerAdd(p);
+                fm.DialogResult = true;
+                fm.Close();
+            }
+            catch (Exception ex)
+            {
+                utils.ShowError("Error saving: " + ex.Message);
+                utils.Log("Error saving: " + ex.ToString());
+            }
+            }
+
+
+
 
     }
 }
