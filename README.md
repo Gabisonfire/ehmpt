@@ -13,6 +13,7 @@ EHMpt is a utility to track your players progress and display useful information
 - Add a player and enter his initial stats. This will create his first snapshot. When later in your game, select the player in the treeview on the left and add a "snapshot" to that player. These will be used for comparison and charts.
 - Different tabs will unlock whether you select a player or a snapshot in the treeview.
 - You can add a different database by chosing "New..." from the database drop-down if you want to seperate players.
+- Import function supports EHM assistant (or similar) CSV output. MAke sure you include all the needed columns in your CSV else the importer will complain.
 
 # Roadmap
 - Track Height / Weight
