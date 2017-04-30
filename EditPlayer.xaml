@@ -5,13 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EHMProgressTracker"
         mc:Ignorable="d"
-        Title="EditPlayer" Height="154.737" Width="300" ResizeMode="NoResize" Icon="icon.ico">
+        Title="EditPlayer" Height="154.737" Width="315" ResizeMode="NoResize" Icon="icon.ico">
     <Grid>
         <Label x:Name="label" Content="First Name: " HorizontalAlignment="Left" Margin="16,16,0,0" VerticalAlignment="Top"/>
         <Label x:Name="label_Copy" Content="Last Name: " HorizontalAlignment="Left" Margin="16,42,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="tbFirstName" HorizontalAlignment="Left" Height="23" Margin="88,20,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="190"/>
         <TextBox x:Name="tbLastName" HorizontalAlignment="Left" Height="23" Margin="88,46,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="190"/>
-        <Button x:Name="btSave" Content="Save" HorizontalAlignment="Left" Margin="119,87,0,0" VerticalAlignment="Top" Width="75" Click="btSave_Click"/>
+        <Button x:Name="btSave" Content="Save" HorizontalAlignment="Left" Margin="125,87,0,0" VerticalAlignment="Top" Width="75" Click="btSave_Click"/>
 
     </Grid>
 </Window>

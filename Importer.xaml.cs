@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.IO;
 using System.Windows.Media.Animation;
+using Microsoft.VisualBasic;
 
 
 namespace EHMProgressTracker
@@ -127,7 +128,7 @@ namespace EHMProgressTracker
         private void btImport_Click(object sender, RoutedEventArgs e)
         {
             List<string> attributes = new List<string>();
-            foreach (ListBoxItem item in lbPlayers.Items)
+            foreach (ListBoxItem item in lbImport.Items)
             {
                 string[] playerData = item.Tag as string[];
                 Player player = item.Content as Player;
@@ -162,6 +163,54 @@ namespace EHMProgressTracker
             }
             DialogResult = true;
             Close();
+        }
+
+        private void btDown_Click(object sender, RoutedEventArgs e)
+        {
+            if (lbPlayers.SelectedIndex > -1)
+            {
+                List<object> buffer = new List<object>();
+                foreach (var item in lbPlayers.SelectedItems)
+                {
+                    buffer.Add(item);
+                }
+                foreach (var item in buffer)
+                {
+                    lbPlayers.Items.Remove(item);
+                    lbImport.Items.Add(item);
+                }
+            }
+        }
+
+        private void btUp_Click(object sender, RoutedEventArgs e)
+        {
+            if (lbPlayers.SelectedIndex > -1)
+            {
+                List<object> buffer = new List<object>();
+                foreach (var item in lbImport.SelectedItems)
+                {
+                    buffer.Add(item);
+                }
+                foreach (var item in buffer)
+                {
+                    lbImport.Items.Remove(item);
+                    lbPlayers.Items.Add(item);
+                }
+            }
+        }
+
+        private void btAll_Click(object sender, RoutedEventArgs e)
+        {
+            List<object> buffer = new List<object>();
+            foreach (var item in lbPlayers.Items)
+            {
+                buffer.Add(item);
+            }
+            foreach (var item in buffer)
+            {
+                lbPlayers.Items.Remove(item);
+                lbImport.Items.Add(item);
+            }
         }
     }
 }

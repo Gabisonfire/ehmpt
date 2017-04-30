@@ -15,11 +15,8 @@ EHMpt is a utility to track your players progress and display useful information
 - You can add a different database by chosing "New..." from the database drop-down if you want to seperate players.
 
 # Roadmap
-- Import via csv
 - Track Height / Weight
 - Treeview sorting options 
-- Improve the "add player" screen
 - More attributes compare
-- Better display for attribute growth (Bars)
 - More options
 - Custom formulas

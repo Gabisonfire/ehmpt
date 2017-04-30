@@ -18,10 +18,6 @@ namespace EHMProgressTracker
      * TODO
      * Track Height / Weight
      * Treeview Sorting
-     * All attributes chart
-     * Attribute growth (all) Bars
-     * Prefill new snapshots
-     * Edit players name
      * Edit snapshot
      * */
 
