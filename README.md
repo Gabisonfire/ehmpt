@@ -1,4 +1,4 @@
-# **[Download here](https://github.com/Gabisonfire/ehmpt/releases/download/0.1Beta/EHMpt.zip)**
+# **[Download here](https://github.com/Gabisonfire/ehmpt/releases/download/0.2Beta/EHMpt.zip)**
 
 # EHMProgressTracker
 
