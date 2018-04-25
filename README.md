@@ -7,6 +7,7 @@ EHMpt is a utility to track your players progress and display useful information
 ![main](screenshots/ehmpt2.png)
 
 # Using it
+Detailed instructions: https://github.com/Gabisonfire/ehmpt/wiki
 - Unzip the archive and run "EHMProgressTracker.exe"
 - The default height and width can be modified by editing ehmpt.config
 - You can preset the ingame date in the top right corner so you don't have to input it every time.
